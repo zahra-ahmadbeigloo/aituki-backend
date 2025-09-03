@@ -1,13 +1,12 @@
 from fastapi import FastAPI
-from routers import users # Import the users router
+from routers import users, auth # Import the new auth router
 
 app = FastAPI()
 
-# Include the user registration router in your main app.
-# All endpoints from users.py will now be available under the main app.
+# Include both routers in your application
 app.include_router(users.router)
+app.include_router(auth.router)
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the AiTuki Backend"}
-    

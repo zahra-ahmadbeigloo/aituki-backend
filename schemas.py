@@ -5,14 +5,10 @@ from typing import Optional
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
-    
-    # --- Recommended Additions ---
     full_name: str
     date_of_birth: date
     sex_assigned_at_birth: str
     primary_health_goal: Optional[str] = None
-    
-    # --- Onboarding Data from Figma ---
     exercise_hours_yesterday: float
     sleep_hours_last_night: float
     had_sleep_disturbances: bool
@@ -25,13 +21,19 @@ class UserCreate(BaseModel):
     current_energy_rating: int
     most_energized_time: str
 
-# --- FIX: Added a new schema for API responses ---
 class User(BaseModel):
     id: int
     email: EmailStr
     created_at: datetime
     full_name: str
-    # ... include any other fields from UserCreate you want to return, EXCEPT the password
-
+    
     class Config:
-        from_attributes = True # This allows the schema to be created from a database object
+        from_attributes = True
+
+# --- NEW: Schemas for Authentication ---
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
