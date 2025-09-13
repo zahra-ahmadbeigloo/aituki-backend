@@ -3,6 +3,9 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+Base = declarative_base()
+
+
 def normalize_db_url(url: str) -> str:
     # SQLAlchemy needs the 'postgresql+psycopg2' prefix
     if url.startswith("postgres://"):
@@ -10,7 +13,7 @@ def normalize_db_url(url: str) -> str:
 
     # If you accidentally put the external DB URL (public host), require SSL.
     # Internal URLs usually end with `.render.internal` and don't need SSL.
-    iif "render.internal" not in url and "sslmode" not in url:
+    if "render.internal" not in url and "sslmode" not in url:
         url += ("&" if "?" in url else "?") + "sslmode=require"
     return url
 
