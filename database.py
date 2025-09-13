@@ -10,9 +10,8 @@ def normalize_db_url(url: str) -> str:
 
     # If you accidentally put the external DB URL (public host), require SSL.
     # Internal URLs usually end with `.render.internal` and don't need SSL.
-    if "render.internal" not in url and "sslmode" not in url:
-        sep = "&" if "?" in url else "?"
-        url = f"{url}{sep}sslmode=require"
+    iif "render.internal" not in url and "sslmode" not in url:
+        url += ("&" if "?" in url else "?") + "sslmode=require"
     return url
 
 DATABASE_URL = normalize_db_url(os.environ["DATABASE_URL"])

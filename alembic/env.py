@@ -1,75 +1,59 @@
 import os
 from logging.config import fileConfig
-
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
+from sqlalchemy import engine_from_config, pool
 from alembic import context
-
-# --- START: AiTuki Configuration ---
-# 1. Import your database URL from your main database.py file.
-#    This ensures Alembic uses the same connection string as your app.
-from database import SQLALCHEMY_DATABASE_URL
-
-# 2. Import your Base model from your models.py file so Alembic knows about your tables.
 import models
 from models import Base
-# --- END: AiTuki Configuration ---
 
-db_url = os.environ.get("DATABASE_URL")
+# this Alembic Config object provides access to the .ini file values
+config = context.config
+
+# Load DB URL from env (Render -> Environment)
+db_url = os.environ.get("DATABASE_URL", "")
+
+# Normalize for SQLAlchemy driver + optional SSL
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+if "render.internal" not in db_url and "sslmode" not in db_url:
+    db_url += ("&" if "?" in db_url else "?") + "sslmode=require"
+
+# Push into alembic config so both offline/online modes use it
 if db_url:
-    # Keep the same normalization logic Alembic-side (simple version)
-    if db_url.startswith("postgres://"):
-        db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
-    if "render.internal" not in db_url and "sslmode" not in db_url:
-        sep = "&" if "?" in db_url else "?"
-        db_url = f"{db_url}{sep}sslmode=require"
     config.set_main_option("sqlalchemy.url", db_url)
-
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# --- START: AiTuki Configuration ---
-# 4. Tell Alembic that your models' metadata is the target for autogeneration.
-target_metadata = models.Base.metadata
-# --- END: AiTuki Configuration ---
+target_metadata = Base.metadata
 
-
-def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode."""
+def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
     )
-
     with context.begin_transaction():
         context.run_migrations()
 
-
-def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
+def run_migrations_online():
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
-        poolclass=pool.QueuePool,
+        poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
-
         with context.begin_transaction():
             context.run_migrations()
-
 
 if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
 
 
 
