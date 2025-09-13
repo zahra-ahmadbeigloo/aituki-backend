@@ -1,11 +1,22 @@
+# database.py
+import os
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# --- FIX: Added the port number :5432 after the address ---
-# Make sure to replace YOUR_PASSWORD with your actual password.
-SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:4900946559Dz@127.0.0.1:5432/aituki_db"
+def normalize_db_url(url: str) -> str:
+    # SQLAlchemy needs the 'postgresql+psycopg2' prefix
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+psycopg2://", 1)
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    # If you accidentally put the external DB URL (public host), require SSL.
+    # Internal URLs usually end with `.render.internal` and don't need SSL.
+    if "render.internal" not in url and "sslmode" not in url:
+        sep = "&" if "?" in url else "?"
+        url = f"{url}{sep}sslmode=require"
+    return url
+
+DATABASE_URL = normalize_db_url(os.environ["DATABASE_URL"])
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+
