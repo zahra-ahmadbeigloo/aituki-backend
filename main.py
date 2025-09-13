@@ -1,11 +1,11 @@
 from fastapi import FastAPI
-from routers import users, auth # Import the new auth router
+from routers import users, auth, content # Import the new content router
 
 app = FastAPI()
 
-# Include both routers in your application
 app.include_router(users.router)
 app.include_router(auth.router)
+app.include_router(content.router) # Add the content router
 
 @app.get("/")
 def read_root():
