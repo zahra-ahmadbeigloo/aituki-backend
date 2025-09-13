@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -15,15 +16,15 @@ import models
 from models import Base
 # --- END: AiTuki Configuration ---
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
-config = context.config
-
-# --- START: AiTuki Configuration ---
-# 3. Set the SQLAlchemy URL in the config using the one from your database.py.
-#    This makes database.py the single source of truth for the connection string.
-config.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
-# --- END: AiTuki Configuration ---
+db_url = os.environ.get("DATABASE_URL")
+if db_url:
+    # Keep the same normalization logic Alembic-side (simple version)
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    if "render.internal" not in db_url and "sslmode" not in db_url:
+        sep = "&" if "?" in db_url else "?"
+        db_url = f"{db_url}{sep}sslmode=require"
+    config.set_main_option("sqlalchemy.url", db_url)
 
 
 # Interpret the config file for Python logging.
